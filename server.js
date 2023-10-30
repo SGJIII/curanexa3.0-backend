@@ -1,3 +1,4 @@
+const cors = require("cors");
 const express = require("express");
 const app = express();
 const multer = require("multer");
@@ -5,6 +6,8 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const port = 3000;
+
+app.use(cors()); // <-- Use CORS middleware to allow all origins
 
 app.get("/", (req, res) => {
   res.send("Hello World!");

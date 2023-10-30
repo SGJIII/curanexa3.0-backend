@@ -8,6 +8,12 @@ const path = require("path");
 const port = process.env.PORT || 3000; // <-- Use the PORT environment variable provided by Heroku
 const axios = require("axios");
 const FormData = require("form-data");
+
+const corsOptions = {
+  origin: "*", // or '*' to allow all origins
+  optionsSuccessStatus: 200,
+};
+
 app.use(cors()); // <-- Use CORS middleware to allow all origins
 
 app.get("/", (req, res) => {

@@ -20,23 +20,15 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = file.fieldname + "-" + Date.now();
-    cb(null, uniqueName);
-  },
-});
+const storage = multer.memoryStorage(); // <-- Use memory storage
 const upload = multer({ storage: storage });
 
 app.post("/analyze", upload.single("image"), async (req, res) => {
-  const imagePath = req.file.path;
+  const imageBuffer = req.file.buffer; // <-- Get the file buffer
   const apiUrl = "https://curanexa4.uc.r.appspot.com/analyze";
 
   const form = new FormData();
-  form.append("image", fs.createReadStream(imagePath));
+  form.append("image", imageBuffer, { filename: "image.jpg" }); // <-- Append the buffer as a file
 
   try {
     const response = await axios.post(apiUrl, form, {
@@ -45,29 +37,11 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
       },
     });
 
-    // Save analysis results to file
-    const analysisId = path.basename(imagePath, path.extname(imagePath));
-    const analysisPath = `analyses/${analysisId}.json`;
-    fs.writeFileSync(analysisPath, JSON.stringify(response.data));
-
-    // Return analysis identifier in response
-    res.json({ analysisId });
+    // Return analysis results in response
+    res.json(response.data);
   } catch (error) {
     console.error(`Error: ${error}`);
     res.status(500).send(error.message);
-  }
-});
-
-app.get("/analysis/:analysisId", (req, res) => {
-  const analysisId = req.params.analysisId;
-  const analysisPath = `analyses/${analysisId}.json`;
-
-  // Retrieve analysis results from file
-  if (fs.existsSync(analysisPath)) {
-    const analysisResults = fs.readFileSync(analysisPath, "utf-8");
-    res.json(JSON.parse(analysisResults));
-  } else {
-    res.status(404).send("Analysis not found");
   }
 });
 

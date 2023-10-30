@@ -6,7 +6,8 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const port = process.env.PORT || 3000; // <-- Use the PORT environment variable provided by Heroku
-
+const axios = require("axios");
+const FormData = require("form-data");
 app.use(cors()); // <-- Use CORS middleware to allow all origins
 
 app.get("/", (req, res) => {
@@ -24,28 +25,31 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-app.post("/analyze", upload.single("image"), (req, res) => {
+app.post("/analyze", upload.single("image"), async (req, res) => {
   const imagePath = req.file.path;
-  const scriptPath =
-    "/Users/samjohnson/curanexa3.0/curanexa3.0-torchxrayvision/scripts/process_image.py";
-  const command = `python ${scriptPath} ${imagePath}`;
+  const apiUrl = "https://curanexa4.uc.r.appspot.com/analyze";
 
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return res.status(500).send(error);
-    }
-    console.log(`stdout: ${stdout}`);
-    console.log(`stderr: ${stderr}`);
+  const form = new FormData();
+  form.append("image", fs.createReadStream(imagePath));
+
+  try {
+    const response = await axios.post(apiUrl, form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+    });
 
     // Save analysis results to file
     const analysisId = path.basename(imagePath, path.extname(imagePath));
     const analysisPath = `analyses/${analysisId}.json`;
-    fs.writeFileSync(analysisPath, stdout);
+    fs.writeFileSync(analysisPath, JSON.stringify(response.data));
 
     // Return analysis identifier in response
     res.json({ analysisId });
-  });
+  } catch (error) {
+    console.error(`Error: ${error}`);
+    res.status(500).send(error.message);
+  }
 });
 
 app.get("/analysis/:analysisId", (req, res) => {

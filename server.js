@@ -44,13 +44,8 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
       },
     });
 
-    // Save analysis results to file
-    const analysisId = Date.now().toString(); // Use a timestamp as the analysis ID
-    const analysisPath = `analyses/${analysisId}.json`;
-    fs.writeFileSync(analysisPath, JSON.stringify(response.data));
-
     // Return analysis identifier in response
-    res.json({ analysisId });
+    res.json(response.data);
   } catch (error) {
     console.error(`Error: ${error}`);
     res.status(500).send(error.message);

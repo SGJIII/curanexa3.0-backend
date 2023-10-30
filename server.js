@@ -24,11 +24,18 @@ const storage = multer.memoryStorage(); // <-- Use memory storage
 const upload = multer({ storage: storage });
 
 app.post("/analyze", upload.single("image"), async (req, res) => {
-  const imagePath = req.file.path;
+  if (!req.file) {
+    return res.status(400).send("No file uploaded");
+  }
+
+  const fileBuffer = req.file.buffer;
   const apiUrl = "https://curanexa4.uc.r.appspot.com/analyze";
 
   const form = new FormData();
-  form.append("image", fs.createReadStream(imagePath));
+  form.append("image", fileBuffer, {
+    filename: "image.jpg", // You can provide a filename here
+    contentType: "image/jpeg", // And the content type
+  });
 
   try {
     const response = await axios.post(apiUrl, form, {
@@ -38,7 +45,7 @@ app.post("/analyze", upload.single("image"), async (req, res) => {
     });
 
     // Save analysis results to file
-    const analysisId = path.basename(imagePath, path.extname(imagePath));
+    const analysisId = Date.now().toString(); // Use a timestamp as the analysis ID
     const analysisPath = `analyses/${analysisId}.json`;
     fs.writeFileSync(analysisPath, JSON.stringify(response.data));
 

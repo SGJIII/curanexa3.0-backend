@@ -5,7 +5,7 @@ const multer = require("multer");
 const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const port = 3000;
+const port = process.env.PORT || 3000; // <-- Use the PORT environment variable provided by Heroku
 
 app.use(cors()); // <-- Use CORS middleware to allow all origins
 

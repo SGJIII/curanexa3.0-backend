@@ -59,7 +59,15 @@ app.get("/analysis/:analysisId", (req, res) => {
   // Retrieve analysis results from file
   if (fs.existsSync(analysisPath)) {
     const analysisResults = fs.readFileSync(analysisPath, "utf-8");
-    res.json(JSON.parse(analysisResults));
+    try {
+      const parsedResults = JSON.parse(analysisResults);
+      // Validate or transform the data here if necessary
+      const formattedResults = formatData(parsedResults);
+      res.json(formattedResults);
+    } catch (error) {
+      console.error(`Error parsing JSON: ${error}`);
+      res.status(500).send("Internal server error");
+    }
   } else {
     res.status(404).send("Analysis not found");
   }
